@@ -3,10 +3,8 @@ import express from "express";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "./generated/prisma/client";
 
-// DB 接続の準備
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter, log: ["query"] });
-
 const app = express();
 const PORT = process.env.PORT || 8888;
 
@@ -14,17 +12,23 @@ app.set("view engine", "ejs");
 app.set("views", "./views");
 app.use(express.urlencoded({ extended: true }));
 
-// 1. ユーザー一覧を表示するページ
 app.get("/", async (req, res) => {
   const users = await prisma.user.findMany();
   res.render("index", { users });
 });
 
-// 2. ユーザーを追加する処理
 app.post("/users", async (req, res) => {
-  const name = req.body.name;
+  // 名前と年齢をリクエストから取り出すぞ
+  const { name, age } = req.body;
+  
   if (name) {
-    await prisma.user.create({ data: { name } });
+    await prisma.user.create({
+      data: { 
+        name, 
+        // 年齢は数値として保存する。空なら null にするぞ
+        age: age ? parseInt(age) : null 
+      }
+    });
   }
   res.redirect("/");
 });
